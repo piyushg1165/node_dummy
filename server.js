@@ -2,23 +2,36 @@ const express = require("express");
 const app = express();
 const db = require("./db");
 require('dotenv').config();
+const passport = require('./auth.js');
+
 
 
 const bodyParser = require('body-parser');
 app.use(bodyParser.json());
-app.get("/", (req, res) => {
+
+
+const logRequest = (req, res, next) => {
+    console.log(`${new Date().toLocaleString() } Request made to : ${req.originalUrl} `);
+    next();
+}
+
+app.use(logRequest);
+
+
+
+app.use(passport.initialize());
+
+const localAuthMiddleware = passport.authenticate('local', {session: false});
+
+app.get("/",localAuthMiddleware, (req, res) => {
     res.send('hello there');
 });
 
-
-
-
-
 const personRoutes = require('./routes/personRouter.js');
-app.use("/person",personRoutes);
+app.use("/person",localAuthMiddleware, personRoutes);
 
 const menuRoutes = require('./routes/menuRouter.js');
-app.use("/menu",menuRoutes);
+app.use("/menu",localAuthMiddleware, menuRoutes);
 
 const PORT = process.env.PORT || 3000;
 
